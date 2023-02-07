@@ -163,6 +163,7 @@ func (ca *CoreAccessor) SubmitPayForData(
 	gasLim uint64,
 ) (*TxResponse, error) {
 	response, err := payment.SubmitPayForData(ctx, ca.signer, ca.coreConn, nID, data, gasLim, withFee(fee))
+	fmt.Printf("[rootulp] core_access.go SubmitPayForData response: %v, err: %v\n", response, err)
 	// metrics should only be counted on a successful PFD tx
 	if err == nil && response.Code == 0 {
 		ca.lastPayForData = time.Now().UnixMilli()

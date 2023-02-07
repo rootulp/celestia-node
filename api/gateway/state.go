@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/celestiaorg/celestia-node/state"
@@ -186,6 +187,7 @@ func (h *Handler) handleSubmitPFD(w http.ResponseWriter, r *http.Request) {
 	fee := types.NewInt(req.Fee)
 	// perform request
 	txResp, err := h.state.SubmitPayForData(r.Context(), nID, data, fee, req.GasLimit)
+	fmt.Printf("[rootulp] state.go txResp: %+v, err %+v\n", txResp, err)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, submitPFDEndpoint, err)
 		return
