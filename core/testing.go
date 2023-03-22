@@ -56,7 +56,7 @@ func DefaultTestConfig() *TestConfig {
 		Tendermint:      tnCfg,
 		App:             appCfg,
 		Accounts:        accounts,
-		SuppressLogs:    true,
+		SuppressLogs:    false,
 	}
 }
 
@@ -78,6 +78,7 @@ func StartTestNodeWithConfig(t *testing.T, cfg *TestConfig) testnode.Context {
 		cfg.SuppressLogs,
 		state,
 		kr,
+		"chain-id",
 	)
 	require.NoError(t, err)
 

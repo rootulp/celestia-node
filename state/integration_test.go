@@ -3,6 +3,7 @@ package state
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"testing"
 
@@ -46,6 +47,7 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	s.T().Log("setting up integration test suite")
 
 	cfg := core.DefaultTestConfig()
+	cfg.SuppressLogs = false
 	s.cctx = core.StartTestNodeWithConfig(s.T(), cfg)
 	s.accounts = cfg.Accounts
 
@@ -119,12 +121,13 @@ func (s *IntegrationTestSuite) TestGetBalance() {
 // This test can be used to generate a json encoded block for other test data,
 // such as that in share/availability/light/testdata
 func (s *IntegrationTestSuite) TestGenerateJSONBlock() {
-	t := s.T()
-	t.Skip("skipping testdata generation test")
+	// t := s.T()
+	// t.Skip("skipping testdata generation test")
 	resp, err := s.cctx.FillBlock(4, s.accounts, flags.BroadcastSync)
 	require := s.Require()
 	require.NoError(err)
 	require.Equal(abci.CodeTypeOK, resp.Code)
+	fmt.Printf("resp: %v\n", resp)
 	require.NoError(s.cctx.WaitForNextBlock())
 
 	// download the block that the tx was in
