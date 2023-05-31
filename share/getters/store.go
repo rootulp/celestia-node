@@ -105,7 +105,7 @@ func (sg *StoreGetter) GetSharesByNamespace(
 		utils.SetStatusAndEnd(span, err)
 	}()
 
-	err = verifyNIDSize(nID)
+	err = verifyNamespaceSize(nID)
 	if err != nil {
 		return nil, fmt.Errorf("getter/store: invalid namespace ID: %w", err)
 	}

@@ -188,7 +188,7 @@ func TestCollectLeavesByNamespace_IncompleteData(t *testing.T) {
 
 	shares := RandShares(t, 16)
 
-	// set all shares to the same namespace id
+	// set all shares to the same namespace
 	nid := shares[0][:NamespaceSize]
 
 	for i, nspace := range shares {

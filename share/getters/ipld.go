@@ -100,9 +100,9 @@ func (ig *IPLDGetter) GetSharesByNamespace(
 		utils.SetStatusAndEnd(span, err)
 	}()
 
-	err = verifyNIDSize(nID)
+	err = verifyNamespaceSize(nID)
 	if err != nil {
-		return nil, fmt.Errorf("getter/ipld: invalid namespace ID: %w", err)
+		return nil, fmt.Errorf("getter/ipld: invalid namespace: %w", err)
 	}
 
 	// wrap the blockservice in a session if it has been signaled in the context.

@@ -1,6 +1,7 @@
 package getters
 
 import (
+	"bytes"
 	"context"
 	"encoding/hex"
 	"errors"
@@ -31,34 +32,42 @@ var (
 )
 
 // filterRootsByNamespace returns the row roots from the given share.Root that contain the passed
-// namespace ID.
-func filterRootsByNamespace(root *share.Root, nID namespace.ID) []cid.Cid {
+// namespace.
+func filterRootsByNamespace(root *share.Root, ns []byte) []cid.Cid {
 	rowRootCIDs := make([]cid.Cid, 0, len(root.RowRoots))
 	for _, row := range root.RowRoots {
-		if !nID.Less(nmt.MinNamespace(row, nID.Size())) && nID.LessOrEqual(nmt.MaxNamespace(row, nID.Size())) {
+		if isNamespaceInRow(ns, row) {
 			rowRootCIDs = append(rowRootCIDs, ipld.MustCidFromNamespacedSha256(row))
 		}
 	}
 	return rowRootCIDs
 }
 
-// collectSharesByNamespace collects NamespaceShares within the given namespace ID from the given
+func isNamespaceInRow(ns []byte, rowRoot []byte) bool {
+	size := namespace.IDSize(len(ns))
+	rowMinNs := nmt.MinNamespace(rowRoot, size)
+	rowMaxNs := nmt.MaxNamespace(rowRoot, size)
+
+	return bytes.Compare(rowMinNs, ns) <= 0 && bytes.Compare(ns, rowMaxNs) <= 0
+}
+
+// collectSharesByNamespace collects NamespaceShares within the given namespace from the given
 // share.Root.
 func collectSharesByNamespace(
 	ctx context.Context,
 	bg blockservice.BlockGetter,
 	root *share.Root,
-	nID namespace.ID,
+	ns []byte,
 ) (shares share.NamespacedShares, err error) {
 	ctx, span := tracer.Start(ctx, "collect-shares-by-namespace", trace.WithAttributes(
 		attribute.String("root", root.String()),
-		attribute.String("nid", hex.EncodeToString(nID)),
+		attribute.String("nid", hex.EncodeToString(ns)),
 	))
 	defer func() {
 		utils.SetStatusAndEnd(span, err)
 	}()
 
-	rootCIDs := filterRootsByNamespace(root, nID)
+	rootCIDs := filterRootsByNamespace(root, ns)
 	if len(rootCIDs) == 0 {
 		return nil, share.ErrNamespaceNotFound
 	}
@@ -69,13 +78,13 @@ func collectSharesByNamespace(
 		// shadow loop variables, to ensure correct values are captured
 		i, rootCID := i, rootCID
 		errGroup.Go(func() error {
-			row, proof, err := share.GetSharesByNamespace(ctx, bg, rootCID, nID, len(root.RowRoots))
+			row, proof, err := share.GetSharesByNamespace(ctx, bg, rootCID, ns, len(root.RowRoots))
 			shares[i] = share.NamespacedRow{
 				Shares: row,
 				Proof:  proof,
 			}
 			if err != nil {
-				return fmt.Errorf("retrieving nID %x for row %x: %w", nID, rootCID, err)
+				return fmt.Errorf("retrieving nID %x for row %x: %w", ns, rootCID, err)
 			}
 			return nil
 		})
@@ -93,10 +102,9 @@ func collectSharesByNamespace(
 	return shares, nil
 }
 
-func verifyNIDSize(nID namespace.ID) error {
-	if len(nID) != share.NamespaceSize {
-		return fmt.Errorf("expected namespace ID of size %d, got %d",
-			share.NamespaceSize, len(nID))
+func verifyNamespaceSize(ns []byte) error {
+	if size := len(ns); size != share.NamespaceSize {
+		return fmt.Errorf("expected namespace of size %d, got %d", share.NamespaceSize, size)
 	}
 	return nil
 }
