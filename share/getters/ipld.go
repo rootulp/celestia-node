@@ -12,7 +12,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/celestiaorg/nmt/namespace"
 	"github.com/celestiaorg/rsmt2d"
 
 	"github.com/celestiaorg/celestia-node/libs/utils"
@@ -90,24 +89,24 @@ func (ig *IPLDGetter) GetEDS(ctx context.Context, root *share.Root) (eds *rsmt2d
 func (ig *IPLDGetter) GetSharesByNamespace(
 	ctx context.Context,
 	root *share.Root,
-	nID namespace.ID,
+	ns []byte,
 ) (shares share.NamespacedShares, err error) {
 	ctx, span := tracer.Start(ctx, "ipld/get-shares-by-namespace", trace.WithAttributes(
 		attribute.String("root", root.String()),
-		attribute.String("nid", hex.EncodeToString(nID)),
+		attribute.String("nid", hex.EncodeToString(ns)),
 	))
 	defer func() {
 		utils.SetStatusAndEnd(span, err)
 	}()
 
-	err = verifyNamespaceSize(nID)
+	err = verifyNamespaceSize(ns)
 	if err != nil {
 		return nil, fmt.Errorf("getter/ipld: invalid namespace: %w", err)
 	}
 
 	// wrap the blockservice in a session if it has been signaled in the context.
 	blockGetter := getGetter(ctx, ig.bServ)
-	shares, err = collectSharesByNamespace(ctx, blockGetter, root, nID)
+	shares, err = collectSharesByNamespace(ctx, blockGetter, root, ns)
 	if errors.Is(err, ipld.ErrNodeNotFound) {
 		// convert error to satisfy getter interface contract
 		err = share.ErrNotFound

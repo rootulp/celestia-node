@@ -39,10 +39,11 @@ type submitTxRequest struct {
 // submitPFBRequest represents a request to submit a PayForBlob
 // transaction.
 type submitPFBRequest struct {
-	NamespaceID string `json:"namespace_id"`
-	Data        string `json:"data"`
-	Fee         int64  `json:"fee"`
-	GasLimit    uint64 `json:"gas_limit"`
+	NamespaceID      string `json:"namespace_id"`
+	Data             string `json:"data"`
+	Fee              int64  `json:"fee"`
+	GasLimit         uint64 `json:"gas_limit"`
+	NamespaceVersion uint32 `json:"namespace_version"`
 }
 
 // queryRedelegationsRequest represents a request to query redelegations
@@ -142,9 +143,10 @@ func (h *Handler) handleSubmitPFB(w http.ResponseWriter, r *http.Request) {
 	fee := types.NewInt(req.Fee)
 
 	blob := &apptypes.Blob{
-		NamespaceId:  nID,
-		Data:         data,
-		ShareVersion: uint32(appconsts.DefaultShareVersion),
+		NamespaceId:      nID,
+		Data:             data,
+		ShareVersion:     uint32(appconsts.DefaultShareVersion),
+		NamespaceVersion: req.NamespaceVersion,
 	}
 
 	// perform request
